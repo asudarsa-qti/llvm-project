@@ -2896,7 +2896,7 @@ static llvm::TargetExtType *getTargetExtType(CodeGenFunction &CGF,
   llvm::Type *Tys[] = {ElTy};
   // Unsigned arguments for TargetExtType
   unsigned Ints[] = {MTy->getScope(), MTy->getNumRows(), MTy->getNumColumns(),
-                      MTy->getUse()};
+                     MTy->getUse()};
   // Create a TargetExtType to represent the coop matrix type
   llvm::TargetExtType *RetType = llvm::TargetExtType::get(
       CGM.getLLVMContext(), "spirv.CooperativeMatrixKHR",
