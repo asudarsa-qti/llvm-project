@@ -4834,7 +4834,6 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
   case Builtin::BIcoop_mat_binary_div: {
     auto Arg0 = EmitScalarExpr(E->getArg(0));
     auto Arg1 = EmitScalarExpr(E->getArg(1));
-
     const auto *MTy = E->getType()->getAs<CooperativeMatrixType>();
     const auto *MATy = E->getArg(0)->getType()->getAs<CooperativeMatrixType>();
     const auto *MBTy = E->getArg(1)->getType()->getAs<CooperativeMatrixType>();
