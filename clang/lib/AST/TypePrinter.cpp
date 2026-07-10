@@ -279,6 +279,7 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
     case Type::Vector:
     case Type::ExtVector:
     case Type::ConstantMatrix:
+    case Type::CooperativeMatrix:
     case Type::DependentSizedMatrix:
     case Type::FunctionProto:
     case Type::FunctionNoProto:
@@ -913,6 +914,20 @@ void TypePrinter::printConstantMatrixAfter(const ConstantMatrixType *T,
     printHLSLMatrixAfter(T, OS);
     return;
   }
+  printAfter(T->getElementType(), OS);
+}
+
+void TypePrinter::printCooperativeMatrixBefore(const CooperativeMatrixType *T,
+                                               raw_ostream &OS) {
+  printBefore(T->getElementType(), OS);
+  OS << " __attribute__((coop_mat(";
+  OS << T->getScope() << ", " << T->getNumRows() << ", ";
+  OS << T->getNumColumns() << ", " << T->getUse();
+  OS << ")))";
+}
+
+void TypePrinter::printCooperativeMatrixAfter(const CooperativeMatrixType *T,
+                                              raw_ostream &OS) {
   printAfter(T->getElementType(), OS);
 }
 
@@ -2026,6 +2041,7 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
   case attr::OpenCLConstantAddressSpace:
   case attr::OpenCLGenericAddressSpace:
   case attr::HLSLGroupSharedAddressSpace:
+  case attr::CoopMatrixType:
     // FIXME: Update printAttributedBefore to print these once we generate
     // AttributedType nodes for them.
     break;
