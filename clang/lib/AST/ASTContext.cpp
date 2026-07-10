@@ -4946,6 +4946,45 @@ QualType ASTContext::getCooperativeMatrixType(QualType ElementTy,
   return QualType(New, 0);
 }
 
+QualType ASTContext::getCooperativeMatrixType(QualType ElementTy,
+                                              unsigned Scope, unsigned NumRows,
+                                              unsigned NumColumns,
+                                              unsigned Use) const {
+  llvm::FoldingSetNodeID ID;
+  CooperativeMatrixType::Profile(ID, ElementTy, Scope, NumRows, NumColumns, Use,
+                                 Type::CooperativeMatrix);
+
+  assert(MatrixType::isValidElementType(ElementTy, getLangOpts()) &&
+         "need a valid element type");
+  assert(CooperativeMatrixType::isDimensionValid(NumRows) &&
+         CooperativeMatrixType::isDimensionValid(NumColumns) &&
+         "need valid matrix dimensions");
+  assert(CooperativeMatrixType::isScopeValid(Scope) &&
+         "need valid matrix scope");
+  assert(CooperativeMatrixType::isUseValid(Use) && "need valid matrix use");
+  void *InsertPos = nullptr;
+  if (CooperativeMatrixType *MTP =
+          CooperativeMatrixTypes.FindNodeOrInsertPos(ID, InsertPos))
+    return QualType(MTP, 0);
+
+  QualType Canonical;
+  if (!ElementTy.isCanonical()) {
+    Canonical = getCooperativeMatrixType(getCanonicalType(ElementTy), Scope,
+                                         NumRows, NumColumns, Use);
+
+    CooperativeMatrixType *NewIP =
+        CooperativeMatrixTypes.FindNodeOrInsertPos(ID, InsertPos);
+    assert(!NewIP && "Matrix type shouldn't already exist in the map");
+    (void)NewIP;
+  }
+
+  auto *New = new (*this, TypeAlignment) CooperativeMatrixType(
+      ElementTy, Scope, NumRows, NumColumns, Use, Canonical);
+  CooperativeMatrixTypes.InsertNode(New, InsertPos);
+  Types.push_back(New);
+  return QualType(New, 0);
+}
+
 QualType ASTContext::getDependentSizedMatrixType(QualType ElementTy,
                                                  Expr *RowExpr,
                                                  Expr *ColumnExpr,
