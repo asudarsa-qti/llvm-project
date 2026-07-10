@@ -2858,6 +2858,52 @@ static std::string getPtrAddrSpaceSuffix(llvm::Type *PtrTy) {
   }
 }
 
+static std::string getSPIRVBuiltinName(unsigned BuiltinID,
+                                       bool IsFloat = false) {
+  switch (BuiltinID) {
+  case Builtin::BIcoop_mat_load:
+    return "__spirv_CooperativeMatrixLoadKHR";
+  case Builtin::BIcoop_mat_store:
+    return "__spirv_CooperativeMatrixStoreKHR";
+  case Builtin::BIcoop_mat_mulAdd:
+    return "__spirv_CooperativeMatrixMulAddKHR";
+  case Builtin::BIcoop_mat_binary_add:
+    return (IsFloat) ? "__spirv_CooperativeMatrixFAdd" : "__spirv_IAdd";
+  case Builtin::BIcoop_mat_binary_sub:
+    return (IsFloat) ? "__spirv_CooperativeMatrixFSub" : "__spirv_ISub";
+  case Builtin::BIcoop_mat_binary_mul:
+    return (IsFloat) ? "__spirv_CooperativeMatrixFMul" : "__spirv_IMul";
+  case Builtin::BIcoop_mat_binary_div:
+    return (IsFloat) ? "__spirv_CooperativeMatrixFDiv" : "__spirv_IDiv";
+  case Builtin::BIcoop_mat_scalar_mul:
+    return "__spirv_CooperativeMatrixScalarMulKHR";
+  case Builtin::BIcoop_mat_scalar_neg:
+    return "__spirv_CooperativeMatrixScalarNeg";
+  case Builtin::BIcoop_mat_init:
+    return "__spirv_CompositeConstruct";
+  case Builtin::BIcoop_mat_length:
+    return "__spirv_CooperativeMatrixLengthKHR";
+  }
+  assert(0 && "Unexpected Builtin");
+  return "";
+}
+
+static llvm::TargetExtType *getTargetExtType(CodeGenFunction &CGF,
+                                             CodeGenModule &CGM,
+                                             const CooperativeMatrixType *MTy) {
+  llvm::Type *ElTy = CGF.ConvertType(MTy->getElementType());
+  // Type arguments for TargetExtType
+  llvm::Type *Tys[] = {ElTy};
+  // Unsigned arguments for TargetExtType
+  unsigned Ints[] = {MTy->getScope(), MTy->getNumRows(), MTy->getNumColumns(),
+                      MTy->getUse()};
+  // Create a TargetExtType to represent the coop matrix type
+  llvm::TargetExtType *RetType = llvm::TargetExtType::get(
+      CGM.getLLVMContext(), "spirv.CooperativeMatrixKHR",
+      llvm::ArrayRef<llvm::Type *>(Tys), llvm::ArrayRef<unsigned>(Ints));
+  return RetType;
+}
+
 } // namespace
 
 RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
